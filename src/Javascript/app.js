@@ -13,11 +13,21 @@ let carrito = {}
 // EVENTO cuando el documento HTML ha sido completamente me muestra fetch cargado #2
 document.addEventListener("DOMContentLoaded", () => {
     fetchData()
+    if (localStorage.getItem('keyCarrito')) {
+        // si llega a existir algo en el local storage (key) en el objeto lo llenamos con esa informacion LOCAL STORAGE
+        carrito = JSON.parse(localStorage.getItem('keyCarrito'))
+        pintarCarrito()
+    }
 })
 
-//  EVENTO delegacion de evento click para detectar cada elemento #5
+//  EVENTO delegation click para detectar cada elemento #5 + con el paso #6
 cards.addEventListener('click', e => {
     addCarrito(e)
+})
+
+// EVENTO  delegation para los botones + - #12 + con el paso #13
+items.addEventListener('click', e => {
+    bntAccion(e)
 })
 
 // traer productos #1
@@ -85,7 +95,7 @@ const setCarrito = objeto => {
     // console.log(carrito)
 }
 
-// pintar el carrito
+// pintar el carrito #10
 // se necesita un for each pero como es un objeto se utiliza object.values
 const pintarCarrito = () => {
     // console.log(carrito)
@@ -106,14 +116,66 @@ const pintarCarrito = () => {
     items.appendChild(fragment)
 
     pintarFooter()
+
+    // guardar la informacion del local storage #14
+    localStorage.setItem('keyCarrito', JSON.stringify(carrito))
 }
 
+// pintar footer # 11
 const pintarFooter = () => {
     // para que no se sobrescriba 
     footer.innerHTML = ''
     // sino tiene elementos
     if(Object.keys(carrito).length === 0) {
         footer.innerHTML = '<th scope="row" colspan="5">Carrito vacío - comience a comprar!</th>'
+        return
+    }
+    // en caso de que si haya elementos = total productos y total precio
+    const totalCantidad = Object.values(carrito).reduce((acumulador, {cantidad}) => acumulador + cantidad, 0)
+    const totalPrecio = Object.values(carrito).reduce((acumulador, {cantidad, precio}) => acumulador + cantidad * precio, 0)
+    // console.log(Object.values(carrito))
+    console.log(totalPrecio)
+
+    // pintar el footer = totales 
+    templateFooter.querySelectorAll('td')[0].textContent = totalCantidad
+    templateFooter.querySelector('span').textContent = totalPrecio
+
+    const clone = templateFooter.cloneNode(true)
+    fragment.appendChild(clone)
+    footer.appendChild(fragment)
+
+    // boton vaciar carrito 
+    const btnVaciar = document.getElementById('vaciar-carrito')
+    btnVaciar.addEventListener('click', () => {
+        carrito = {}
+        pintarCarrito()
+    })
+}
+// funcion donde esta el evento de los botones delegation #13 
+const bntAccion = e => {
+    // console.log(e.target)
+    // accion de aumentar
+    if (e.target.classList.contains('btn-info')) {
+        console.log(carrito[e.target.dataset.id])
+        // carrito[e.target.dataset.id]
+        const producto = carrito[e.target.dataset.id]
+        // modificar solo la cantidad
+        producto.cantidad = carrito[e.target.dataset.id].cantidad + 1
+        // producto.cantidad++
+        // guardarlo 
+        carrito[e.target.dataset.id] = {...producto}
+        // pintarlo
+        pintarCarrito()
+    }
+    // accion de disminuir 
+    if (e.target.classList.contains('btn-danger')) {
+        const producto = carrito[e.target.dataset.id]
+        producto.cantidad = carrito[e.target.dataset.id].cantidad - 1
+        if (producto.cantidad === 0) {
+            delete carrito[e.target.dataset.id]
+        } 
+        pintarCarrito()       
     }
 
+    e.stopPropagation()
 }
